@@ -1,19 +1,32 @@
 {
-  "name": "karyiagent",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "karyi-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A powerful AI-powered terminal assistant with security and auditing capabilities",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm run build --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": [
+    "ai",
+    "terminal",
+    "assistant",
+    "cli",
+    "agent"
+  ],
+  "author": "Karyi Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "eslint": "^9.39.1",
-    "globals": "^16.5.0",
-    "typescript-eslint": "^8.46.3"
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
   }
 }

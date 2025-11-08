@@ -1,0 +1,31 @@
+{
+  "name": "@karyi/tui",
+  "version": "0.1.0",
+  "description": "Terminal User Interface for KaryiAgent",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "ink": "^4.4.1",
+    "react": "^18.2.0",
+    "ink-text-input": "^5.0.1",
+    "ink-spinner": "^5.0.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.45",
+    "rimraf": "^5.0.5"
+  }
+}
