@@ -1,0 +1,17 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Python
+/.venv
+__pycache__/
+*.pyc
+
+# Build output
+/dist
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
