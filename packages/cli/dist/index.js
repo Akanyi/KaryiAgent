@@ -28,6 +28,7 @@ program
     setTimeout(async () => {
         try {
             // 动态导入 ES Module
+            // @ts-ignore @karyi/tui 
             const { startTUI } = await import('@karyi/tui');
             await startTUI();
         }
