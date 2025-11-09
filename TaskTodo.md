@@ -35,11 +35,11 @@
 - [x] 实现配置写入和合并逻辑
 
 ### 1.5 Python 环境
-- [ ] 创建 python/ 目录
-- [ ] 创建 python/.venv (虚拟环境)
-- [ ] 更新 requirements.txt (添加基础依赖)
-- [ ] 创建 python/karyi_engine/ 包结构
-- [ ] 创建 python/main.py 入口文件
+- [x] 创建 python/ 目录
+- [x] 创建 python/.venv (虚拟环境)
+- [x] 更新 requirements.txt (添加基础依赖)
+- [x] 创建 python/karyi_engine/ 包结构
+- [x] 创建 python/main.py 入口文件（JSON-RPC Bridge）
 
 ---
 
@@ -414,8 +414,8 @@
 
 ## 进度追踪
 
-**当前阶段**: 阶段一 - 基础框架搭建
-**完成进度**: 0 / 8 阶段
-**阶段一进度**: 1.1 ✓ | 1.2 ✓ | 1.3 ✓ | 1.4 ✓ | 1.5 ⏳
+**当前阶段**: 阶段一 - 基础框架搭建 ✅ COMPLETED
+**完成进度**: 1 / 8 阶段
+**阶段一进度**: 1.1 ✓ | 1.2 ✓ | 1.3 ✓ | 1.4 ✓ | 1.5 ✓
 
-**下一步**: 搭建 Python 环境（1.5）
+**下一步**: 阶段二 - 进程间通信（IPC 模块 + JSON-RPC Bridge 测试）
