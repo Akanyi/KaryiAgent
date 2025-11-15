@@ -86,5 +86,8 @@ export interface AppState extends SessionState {
   setTemporaryVariable: (key: string, value: string) => void;
   getTemporaryVariable: (key: string) => string | undefined;
   updateStats: (updates: Partial<SessionStats>) => void;
+  startSession: () => void;
+  endSession: () => void;
+  updateTokens: (promptTokens: number, completionTokens: number) => void;
   reset: () => void;
 }

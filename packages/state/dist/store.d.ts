@@ -9,6 +9,10 @@ import { AppState, Message, SessionStats } from './types';
  */
 export declare const useAppStore: import("zustand").UseBoundStore<import("zustand").StoreApi<AppState>>;
 /**
+ * 会话 Store 别名（为了兼容）
+ */
+export declare const useSessionStore: import("zustand").UseBoundStore<import("zustand").StoreApi<AppState>>;
+/**
  * 导出选择器
  */
 export declare const selectMessages: (state: AppState) => Message[];

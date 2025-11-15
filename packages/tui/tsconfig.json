@@ -2,14 +2,18 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
     "jsx": "react",
     "esModuleInterop": true,
     "moduleResolution": "node16",
     "module": "node16",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "composite": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../state" }
+  ]
 }

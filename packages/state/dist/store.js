@@ -5,7 +5,7 @@
  * 使用 Zustand 实现的应用状态管理
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.selectIsPaused = exports.selectIsProcessing = exports.selectStats = exports.selectMessages = exports.useAppStore = void 0;
+exports.selectIsPaused = exports.selectIsProcessing = exports.selectStats = exports.selectMessages = exports.useSessionStore = exports.useAppStore = void 0;
 const zustand_1 = require("zustand");
 const nanoid_1 = require("nanoid");
 /**
@@ -122,6 +122,34 @@ function createActions(set, get) {
             }));
         },
         /**
+         * 开始会话
+         */
+        startSession: () => {
+            set(createInitialState());
+        },
+        /**
+         * 结束会话
+         */
+        endSession: () => {
+            set((state) => ({
+                stats: {
+                    ...state.stats,
+                    duration: Date.now() - state.stats.startTime,
+                },
+            }));
+        },
+        /**
+         * 更新 Token 统计
+         */
+        updateTokens: (promptTokens, completionTokens) => {
+            set((state) => ({
+                stats: {
+                    ...state.stats,
+                    totalTokens: state.stats.totalTokens + promptTokens + completionTokens,
+                },
+            }));
+        },
+        /**
          * 重置状态
          */
         reset: () => {
@@ -136,6 +164,10 @@ exports.useAppStore = (0, zustand_1.create)((set, get) => ({
     ...createInitialState(),
     ...createActions(set, get),
 }));
+/**
+ * 会话 Store 别名（为了兼容）
+ */
+exports.useSessionStore = exports.useAppStore;
 /**
  * 导出选择器
  */

@@ -135,6 +135,37 @@ function createActions(set: any, get: any) {
     },
 
     /**
+     * 开始会话
+     */
+    startSession: () => {
+      set(createInitialState());
+    },
+
+    /**
+     * 结束会话
+     */
+    endSession: () => {
+      set((state: AppState) => ({
+        stats: {
+          ...state.stats,
+          duration: Date.now() - state.stats.startTime,
+        },
+      }));
+    },
+
+    /**
+     * 更新 Token 统计
+     */
+    updateTokens: (promptTokens: number, completionTokens: number) => {
+      set((state: AppState) => ({
+        stats: {
+          ...state.stats,
+          totalTokens: state.stats.totalTokens + promptTokens + completionTokens,
+        },
+      }));
+    },
+
+    /**
      * 重置状态
      */
     reset: () => {
@@ -150,6 +181,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   ...createInitialState(),
   ...createActions(set, get),
 }));
+
+/**
+ * 会话 Store 别名（为了兼容）
+ */
+export const useSessionStore = useAppStore;
 
 /**
  * 导出选择器

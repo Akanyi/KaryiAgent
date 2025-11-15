@@ -1,19 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
-const App = ({ onMessage }) => {
+import { Orchestrator } from '../../core/src/index.js';
+import { useSessionStore } from '../../state/src/index.js';
+const App = ({ onMessage, orchestratorConfig }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [showHub, setShowHub] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true);
     const { exit } = useApp();
-    // 添加欢迎消息
+    const orchestratorRef = useRef(null);
+    // 初始化 Orchestrator
     useEffect(() => {
-        setMessages([
-            {
-                role: 'system',
-                content: `Welcome to KaryiAgent!
+        async function initOrchestrator() {
+            try {
+                // 创建 Orchestrator 实例
+                const config = orchestratorConfig || {
+                    aiProvider: {
+                        provider: 'gemini',
+                        apiKey: process.env.GEMINI_API_KEY || '',
+                        model: 'gemini-2.0-flash-exp',
+                    },
+                    systemPrompt: 'You are KaryiAgent, a helpful AI assistant.',
+                    streamResponse: false,
+                };
+                const orchestrator = new Orchestrator(config);
+                await orchestrator.initialize();
+                orchestratorRef.current = orchestrator;
+                // 添加欢迎消息
+                setMessages([
+                    {
+                        role: 'system',
+                        content: `Welcome to KaryiAgent!
 
 I'm your AI-powered terminal assistant with:
 
@@ -25,8 +45,48 @@ I'm your AI-powered terminal assistant with:
 
 Type your message and press Enter to start.
 Commands: /hub (Session Hub) | /quit (Exit)`,
-            },
-        ]);
+                    },
+                ]);
+                setIsInitializing(false);
+            }
+            catch (error) {
+                setMessages([
+                    {
+                        role: 'system',
+                        content: `Failed to initialize: ${error}
+
+Please check your configuration and try again.`,
+                    },
+                ]);
+                setIsInitializing(false);
+            }
+        }
+        initOrchestrator();
+        // 清理函数
+        return () => {
+            if (orchestratorRef.current) {
+                orchestratorRef.current.shutdown();
+            }
+        };
+    }, []);
+    // 订阅状态变化
+    useEffect(() => {
+        const unsubscribe = useSessionStore.subscribe((state) => {
+            // 同步消息到 TUI
+            const stateMessages = state.messages.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+            }));
+            setMessages((prev) => {
+                // 只有当消息数量变化时才更新
+                if (prev.length !== stateMessages.length + 1) { // +1 因为有欢迎消息
+                    return [prev[0], ...stateMessages]; // 保留欢迎消息
+                }
+                return prev;
+            });
+            setIsProcessing(state.isProcessing);
+        });
+        return unsubscribe;
     }, []);
     // 处理快捷键
     useInput((input, key) => {
@@ -56,39 +116,45 @@ Commands: /hub (Session Hub) | /quit (Exit)`,
         }
     });
     // 处理消息发送
-    const handleSubmit = (value) => {
-        if (!value.trim() || isProcessing)
+    const handleSubmit = async (value) => {
+        if (!value.trim() || isProcessing || !orchestratorRef.current)
             return;
         // 检查是否是命令
         if (value === '/hub') {
+            orchestratorRef.current.enterSessionHub();
             setShowHub(true);
             setInput('');
             return;
         }
         if (value === '/quit' || value === '/exit') {
+            if (orchestratorRef.current) {
+                await orchestratorRef.current.shutdown();
+            }
             exit();
             return;
         }
-        const userMessage = { role: 'user', content: value };
-        setMessages((prev) => [...prev, userMessage]);
         setInput('');
-        setIsProcessing(true);
-        // TODO: 发送到 AI 引擎
-        // 暂时模拟响应
-        setTimeout(() => {
-            const assistantMessage = {
-                role: 'assistant',
-                content: `AI 引擎尚未实现。\n\n你的消息：${value}\n\nComing soon!`,
+        // 发送到 Orchestrator
+        try {
+            await orchestratorRef.current.processUserInput(value);
+        }
+        catch (error) {
+            const errorMessage = {
+                role: 'system',
+                content: `Error: ${error}`,
             };
-            setMessages((prev) => [...prev, assistantMessage]);
-            setIsProcessing(false);
-        }, 500);
+            setMessages((prev) => [...prev, errorMessage]);
+        }
         if (onMessage) {
             onMessage(value);
         }
     };
     // 渲染会话中心
     if (showHub) {
+        const sessionState = useSessionStore.getState();
+        const stats = sessionState.stats;
+        const duration = stats.duration ? `${Math.floor(stats.duration / 60000)} min` : '0 min';
+        const tokens = stats.totalTokens ? `${(stats.totalTokens / 1000).toFixed(1)}K` : '0';
         return (React.createElement(Box, { flexDirection: "column", padding: 1 },
             React.createElement(Box, { borderStyle: "double", borderColor: "cyan", padding: 1, flexDirection: "column", width: 60 },
                 React.createElement(Box, { justifyContent: "center" },
@@ -99,19 +165,21 @@ Commands: /hub (Session Hub) | /quit (Exit)`,
                     React.createElement(Text, { color: "yellow" }, "\uD83D\uDCCA Stats"),
                     React.createElement(Box, { marginLeft: 2 },
                         React.createElement(Text, { dimColor: true }, "Duration: "),
-                        React.createElement(Text, { color: "green" }, "5 min"),
+                        React.createElement(Text, { color: "green" }, duration),
                         React.createElement(Text, { dimColor: true }, " \u2502 Tokens: "),
-                        React.createElement(Text, { color: "magenta" }, "1.2K"),
+                        React.createElement(Text, { color: "magenta" }, tokens),
                         React.createElement(Text, { dimColor: true }, " \u2502 Msgs: "),
-                        React.createElement(Text, { color: "cyan" }, messages.length))),
+                        React.createElement(Text, { color: "cyan" }, stats.messageCount))),
                 React.createElement(Box, { marginTop: 1, flexDirection: "column" },
                     React.createElement(Text, { color: "yellow" }, "\uD83D\uDCDD Files"),
-                    React.createElement(Box, { marginLeft: 2 },
-                        React.createElement(Text, { dimColor: true }, "No files modified yet"))),
+                    React.createElement(Box, { marginLeft: 2 }, stats.modifiedFiles.length === 0 ? (React.createElement(Text, { dimColor: true }, "No files modified yet")) : (stats.modifiedFiles.map((file, idx) => (React.createElement(Text, { key: idx, color: "green" },
+                        "\u2022 ",
+                        file)))))),
                 React.createElement(Box, { marginTop: 1, flexDirection: "column" },
                     React.createElement(Text, { color: "yellow" }, "\uD83D\uDD10 Variables"),
-                    React.createElement(Box, { marginLeft: 2 },
-                        React.createElement(Text, { dimColor: true }, "No variables used yet"))),
+                    React.createElement(Box, { marginLeft: 2 }, stats.usedVariables.length === 0 ? (React.createElement(Text, { dimColor: true }, "No variables used yet")) : (stats.usedVariables.map((variable, idx) => (React.createElement(Text, { key: idx, color: "magenta" },
+                        "\u2022 ",
+                        variable)))))),
                 React.createElement(Box, { marginTop: 1 },
                     React.createElement(Text, { dimColor: true }, '─'.repeat(56))),
                 React.createElement(Box, { marginTop: 1, flexDirection: "column" },
@@ -119,24 +187,27 @@ Commands: /hub (Session Hub) | /quit (Exit)`,
                     React.createElement(Box, { marginLeft: 2, flexDirection: "column" },
                         React.createElement(Text, null,
                             React.createElement(Text, { color: "cyan" }, "R  "),
-                            " ",
                             React.createElement(Text, { dimColor: true }, "\u2502"),
-                            " Resume conversation"),
+                            ' Resume conversation'),
                         React.createElement(Text, null,
                             React.createElement(Text, { color: "cyan" }, "T  "),
-                            " ",
                             React.createElement(Text, { dimColor: true }, "\u2502"),
-                            " Takeover shell"),
+                            ' Takeover shell'),
                         React.createElement(Text, null,
                             React.createElement(Text, { color: "cyan" }, "Q  "),
-                            " ",
                             React.createElement(Text, { dimColor: true }, "\u2502"),
-                            " Quit application"),
+                            ' Quit application'),
                         React.createElement(Text, null,
                             React.createElement(Text, { color: "cyan" }, "ESC"),
-                            " ",
                             React.createElement(Text, { dimColor: true }, "\u2502"),
-                            " Back to chat"))))));
+                            ' Back to chat'))))));
+    }
+    // 显示初始化中
+    if (isInitializing) {
+        return (React.createElement(Box, { flexDirection: "column", padding: 2 },
+            React.createElement(Text, null,
+                React.createElement(Spinner, { type: "dots" }),
+                ' Initializing KaryiAgent...')));
     }
     // 主界面
     return (React.createElement(Box, { flexDirection: "column", height: "100%" },
